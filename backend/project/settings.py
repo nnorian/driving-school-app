@@ -12,6 +12,9 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 import os
 from pathlib import Path
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -33,11 +36,18 @@ ALLOWED_HOSTS = []
 
 INSTALLED_APPS = [
     'django.contrib.admin',
-    'django.contrib.auth',
+    'django.contrib.auth', 
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    # Add your custom apps:
+    'accounts',
+    'adminops',
+    'catalog', 
+    'notifications',
+    'reporting',
+    'scheduling',
 ]
 
 MIDDLEWARE = [
@@ -76,9 +86,9 @@ WSGI_APPLICATION = 'project.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.environ.get('POSTGRES_DB', 'autoschool'),
-        'USER': os.environ.get('POSTGRES_USER', 'admin'),
-        'PASSWORD': os.environ.get('POSTGRES_PASSWORD', 'autoschool'),
+        'NAME': os.environ.get('POSTGRES_DB', 'drivingschool_db'),  # Changed
+        'USER': os.environ.get('POSTGRES_USER', 'user'),            # Changed  
+        'PASSWORD': os.environ.get('POSTGRES_PASSWORD', 'password'), # Changed
         'HOST': 'db',
         'PORT': '5432',
     }
