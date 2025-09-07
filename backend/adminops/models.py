@@ -1,13 +1,10 @@
-# backend/adminops/models.py
 from django.db import models
-import uuid
+from django.conf import settings
 
-class Announcement(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    title = models.CharField(max_length=200)
-    content = models.TextField()
+class AuditLog(models.Model):
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL)
+    action_type = models.CharField(max_length=100)
+    target_type = models.CharField(max_length=100, null=True)
+    target_id = models.PositiveIntegerField(null=True)
+    details = models.JSONField(default=dict)
     created_at = models.DateTimeField(auto_now_add=True)
-    is_active = models.BooleanField(default=True)
-
-    def __str__(self):
-        return self.title

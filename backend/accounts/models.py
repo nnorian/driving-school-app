@@ -1,41 +1,49 @@
+from django.conf import settings
 from django.db import models
-from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
-import uuid
+from django.contrib.auth.models import AbstractUser
 
-class UserManager(BaseUserManager):
-    def create_user(self, email, full_name, password=None, role="student", **extra_fields):
-        if not email:
-            raise ValueError("Email must be set")
-        email = self.normalize_email(email)
-        user = self.model(email=email, full_name=full_name, role=role, **extra_fields)
-        user.set_password(password)
-        user.save(using=self._db)
-        return user
+class School(models.Model):
+    name = models.CharField(max_length=255)
+    timezone = models.CharField(max_length=64, default="Europe/Chisinau")
+    contact_info = models.TextField(blank=True, null=True)
+    settings = models.JSONField(default=dict, blank=True)
 
-    def create_superuser(self, email, full_name, password=None, **extra_fields):
-        extra_fields.setdefault('is_staff', True)
-        extra_fields.setdefault('is_superuser', True)
-        return self.create_user(email, full_name, password, role="admin", **extra_fields)
+    def __str__(self): 
+        return self.name
 
-class User(AbstractBaseUser, PermissionsMixin):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+class User(AbstractUser):
+    username = None
     email = models.EmailField(unique=True)
-    full_name = models.CharField(max_length=100)
-    phone = models.CharField(max_length=20, blank=True)
-    role = models.CharField(max_length=50, choices=[
-        ("student", "Student"),
-        ("instructor", "Instructor"),
-        ("director", "Director"),
-        ("admin", "Admin"),
-    ])
-    is_active = models.BooleanField(default=True)
-    is_staff = models.BooleanField(default=False)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    objects = UserManager()
-
     USERNAME_FIELD = "email"
-    REQUIRED_FIELDS = ["full_name"]
+    REQUIRED_FIELDS = []
+
+    ROLE_STUDENT = "STUDENT"
+    ROLE_INSTRUCTOR = "INSTRUCTOR"
+    ROLE_DIRECTOR = "DIRECTOR"
+    ROLE_ADMIN = "ADMIN"
+    ROLE_CHOICES = [
+        (ROLE_STUDENT, "Student"),
+        (ROLE_INSTRUCTOR, "Instructor"),
+        (ROLE_DIRECTOR, "Director"),
+        (ROLE_ADMIN, "Admin"),
+    ]
+
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES)
+    phone = models.CharField(max_length=30, blank=True, null=True)
+    school = models.ForeignKey(School, on_delete=models.CASCADE, related_name="users", null=True, blank=True)
+    notification_prefs = models.JSONField(default=dict, blank=True)
 
     def __str__(self):
-        return f"{self.full_name} ({self.role})"
+        return f"{self.email} ({self.role})"
+
+class StudentProfile(models.Model):
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="student_profile")
+    selected_categories = models.ManyToManyField("catalog.LessonCategory", blank=True)
+    packages = models.ManyToManyField("catalog.LessonPackage", blank=True)
+    preferences = models.JSONField(default=dict, blank=True)
+
+class InstructorProfile(models.Model):
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="instructor_profile")
+    qualifications = models.TextField(blank=True)
+    permitted_categories = models.ManyToManyField("catalog.LessonCategory", blank=True)
+    hourly_rate = models.DecimalField(max_digits=7, decimal_places=2, default=0.0)
