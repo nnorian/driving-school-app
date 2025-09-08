@@ -14,7 +14,7 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv()  # Loads variables from a .env file for local development (not used in production)
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -23,13 +23,28 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-azl5m1pz(n&)%oozwx*6ku_jjf@!$qfy1hu-9zt5g95#n43xuv'
+def _get_env(name: str, default: str | None = None, required: bool = False):
+    """Retrieve an environment variable.
+
+    Args:
+        name: Environment variable name.
+        default: Default value if not set (and not required).
+        required: If True, raise RuntimeError when missing.
+    """
+    val = os.getenv(name, default)
+    if required and val in (None, ""):
+        raise RuntimeError(f"Environment variable '{name}' is required but not set.")
+    return val
+
+# SECURITY WARNING: keep the secret key used in production secret! (Required)
+SECRET_KEY = _get_env("DJANGO_SECRET_KEY", required=True)
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = _get_env("DJANGO_DEBUG", "False").lower() in ("1", "true", "yes", "on")
 
-ALLOWED_HOSTS = []
+# Comma separated list of hosts e.g. "example.com,api.example.com"
+_raw_hosts = _get_env("DJANGO_ALLOWED_HOSTS", "")
+ALLOWED_HOSTS = [h.strip() for h in _raw_hosts.split(",") if h.strip()] if _raw_hosts else ([] if not DEBUG else ["*"])
 
 
 # Application definition
@@ -90,11 +105,11 @@ WSGI_APPLICATION = 'project.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.environ.get('POSTGRES_DB', 'drivingschool_db'),  # Changed
-        'USER': os.environ.get('POSTGRES_USER', 'user'),            # Changed  
-        'PASSWORD': os.environ.get('POSTGRES_PASSWORD', 'password'), # Changed
-        'HOST': 'db',
-        'PORT': '5432',
+        'NAME': _get_env('POSTGRES_DB', required=True),
+        'USER': _get_env('POSTGRES_USER', required=True),
+        'PASSWORD': _get_env('POSTGRES_PASSWORD', required=True),
+        'HOST': _get_env('POSTGRES_HOST', 'db'),
+        'PORT': _get_env('POSTGRES_PORT', '5432'),
     }
 }
 
@@ -150,8 +165,8 @@ REST_FRAMEWORK = {
     ),
 }
 
-CELERY_BROCKER_URL = ""
-CELERY_RESULT_BACKEND = CELERY_BROCKER_URL
+CELERY_BROKER_URL = _get_env("CELERY_BROKER_URL", "redis://redis:6379/0")
+CELERY_RESULT_BACKEND = _get_env("CELERY_RESULT_BACKEND", CELERY_BROKER_URL)
 
 USE_TZ = True
 TIME_ZONE = 'UTC'
