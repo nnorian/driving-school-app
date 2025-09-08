@@ -30,9 +30,7 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    # development fallback: backend folder doesn't contain a Django project
-    # override the default CMD to serve files so the service becomes reachable.
-    command: ["python","-m","http.server","8000"]
+    command: ["python","manage.py","runserver","0.0.0.0:8000"]
 
   frontend:
     image: nginx:alpine

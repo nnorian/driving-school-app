@@ -12,7 +12,12 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 import os
 from pathlib import Path
-from dotenv import load_dotenv
+
+try:
+    from dotenv import load_dotenv  # type: ignore
+except ImportError:  # pragma: no cover - optional dependency
+    def load_dotenv():  # fallback noop
+        return False
 
 load_dotenv()  # Loads variables from a .env file for local development (not used in production)
 
@@ -156,12 +161,10 @@ AUTH_USER_MODEL = "accounts.User"
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework_ximplejwt.authentication.JWTAuthentication",
-
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
     "DEFAULT_PERMISSION_CLASSES": (
         "rest_framework.permissions.IsAuthenticated",
-
     ),
 }
 
